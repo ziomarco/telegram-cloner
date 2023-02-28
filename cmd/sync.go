@@ -1,5 +1,5 @@
 /*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
+Copyright © 2023 brascioladisoia
 */
 package cmd
 
@@ -38,6 +38,13 @@ func sync(cmd *cobra.Command, args []string) {
 		log.Fatal("Please configure the CLI first!")
 	}
 	chatList := http.GetChats(token)
+	parsedOrigin, parsedDestination := promptOriginDestination(chatList)
+	askForConfirm(parsedOrigin, parsedDestination)
+
+	log.Println(fmt.Sprintf("Using %s as origin and %s as destination", parsedOrigin, parsedDestination))
+}
+
+func promptOriginDestination(chatList []string) (string, string) {
 	origin := *prompt.Select(prompt.SelectPromptContent{
 		ErrorMsg: "No origin selected!",
 		Label:    "Select an origin",
@@ -55,9 +62,13 @@ func sync(cmd *cobra.Command, args []string) {
 	parsedDestination := r.FindString(destination)
 	parsedDestination = strings.Trim(parsedDestination, "[")
 	parsedDestination = strings.Trim(parsedDestination, "]")
+	return parsedOrigin, parsedDestination
+}
+
+func askForConfirm(origin string, destination string) {
 	confirm := *prompt.Select(prompt.SelectPromptContent{
 		ErrorMsg: "Invalid response!",
-		Label:    fmt.Sprintf("Do you want to enable sync from %s to %s? (yes/no)", parsedOrigin, parsedDestination),
+		Label:    fmt.Sprintf("Do you want to enable sync from %s to %s? (yes/no)", origin, destination),
 		Items:    []string{"yes", "no"},
 	})
 
@@ -65,6 +76,4 @@ func sync(cmd *cobra.Command, args []string) {
 		log.Println("Ok, interrupting...")
 		os.Exit(1)
 	}
-
-	log.Println(fmt.Sprintf("Using %s as origin and %s as destination", parsedOrigin, parsedDestination))
 }

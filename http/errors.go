@@ -13,10 +13,10 @@ type ErrorResponse struct {
 }
 
 func unmarshalErrorResponse(res string) *ErrorResponse {
-	var unmarshaled ErrorResponse
-	err := json.Unmarshal([]byte(res), &unmarshaled)
+	var unmarshalled ErrorResponse
+	err := json.Unmarshal([]byte(res), &unmarshalled)
 	if err != nil {
 		return nil
 	}
-	return &unmarshaled
+	return &unmarshalled
 }
