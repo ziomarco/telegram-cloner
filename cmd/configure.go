@@ -1,5 +1,5 @@
 /*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
+Copyright © 2023 brascioladisoia
 */
 package cmd
 
@@ -53,6 +53,7 @@ func configure(cmd *cobra.Command, args []string) {
 		log.Println("Updating config file...")
 		os.RemoveAll(home + "/.telegramcloner.yaml")
 	}
+	// TODO: Probably should fix this
 	writeConfigFileError := os.WriteFile(home+"/.telegramcloner.yaml", []byte(fmt.Sprintf("telegram_user_token: %s", loginResponse.Result.Token)), 0644)
 	if writeConfigFileError != nil {
 		log.Fatal("Can't save config!")
