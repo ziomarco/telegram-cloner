@@ -5,26 +5,26 @@ package cmd
 
 import (
 	"fmt"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"log"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"telegramcloner/http"
 	"telegramcloner/prompt"
+	"telegramcloner/telegram"
 )
 
 // syncCmd represents the sync command
 var syncCmd = &cobra.Command{
 	Use:   "sync",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Start watching history and apply syncing rules",
+	Long: `Use this command to start the syncing process by choosing
+a source and a destination. Every message sent in source will be also
+sent in destination.`,
 	Run: sync,
 }
 
@@ -42,6 +42,21 @@ func sync(cmd *cobra.Command, args []string) {
 	askForConfirm(parsedOrigin, parsedDestination)
 
 	log.Println(fmt.Sprintf("Using %s as origin and %s as destination", parsedOrigin, parsedDestination))
+	startSync(token, parsedOrigin, parsedDestination)
+}
+
+func startSync(token string, from string, to string) {
+	origin, _ := strconv.ParseInt(from, 10, 64)
+	destination, _ := strconv.ParseInt(to, 10, 64)
+	log.Println("Starting listening...")
+	telegram.ListenToMessages(token, func(m *tgbotapi.Message) {
+		log.Println("Handling message")
+		if m.From.ID != origin {
+			return
+		}
+		telegram.SendMessage(token, destination, m.Text)
+		log.Println("Message forwarded")
+	}, 0)
 }
 
 func promptOriginDestination(chatList []string) (string, string) {
