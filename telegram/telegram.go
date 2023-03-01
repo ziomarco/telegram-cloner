@@ -10,15 +10,17 @@ type MessageReceivedCallbackFunc = func(message *tgbotapi.Message)
 func ListenToMessages(token string, cb MessageReceivedCallbackFunc, updateRange int) {
 	client := initClient(token)
 	config := tgbotapi.NewUpdate(updateRange)
-	config.Timeout = 60
+	config.Timeout = 600
 	updates := client.GetUpdatesChan(config)
 
 	for update := range updates {
-		if update.Message == nil {
-			return
+		if update.ChannelPost != nil {
+			cb(update.ChannelPost)
 		}
-		//log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
-		cb(update.Message)
+		if update.Message != nil {
+			//log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
+			cb(update.Message)
+		}
 	}
 }
 
