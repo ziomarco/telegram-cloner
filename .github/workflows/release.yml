@@ -1,0 +1,39 @@
+name: CLI
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.20.1
+
+      - name: Build
+        run: make build
+
+      - name: Uploads Artifact
+        uses: actions/upload-artifact@v2.3.1
+        with:
+          name: built
+          path: dist/
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v2.1.0
+      - name: Inspect
+        run: ls -l built
+      - name: Create GitHub Release
+        uses: fnkr/github-action-ghr@v1
+        env:
+          GHR_PATH: built/
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}

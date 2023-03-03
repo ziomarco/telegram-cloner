@@ -37,15 +37,17 @@ func sync(cmd *cobra.Command, args []string) {
 	if len(token) < 1 {
 		log.Fatal("Please configure the CLI first!")
 	}
+
 	chatList := http.GetChats(token)
 	parsedOrigin, parsedDestination := promptOriginDestination(chatList)
 	stringToReplace, replacement := promptSubstitution()
-	askForConfirm(parsedOrigin, parsedDestination)
+	askForSyncStartConfirmation(parsedOrigin, parsedDestination)
 
 	log.Println(fmt.Sprintf("Using %s as origin and %s as destination", parsedOrigin, parsedDestination))
 	if len(stringToReplace) > 0 {
 		log.Println(fmt.Sprintf("Replacing \"%s\" with \"%s\"", stringToReplace, replacement))
 	}
+
 	startSync(token, parsedOrigin, parsedDestination, stringToReplace, replacement)
 }
 
@@ -53,8 +55,10 @@ func startSync(token string, from string, to string, stringToReplace string, rep
 	origin, _ := strconv.ParseInt(from, 10, 64)
 	destination, _ := strconv.ParseInt(to, 10, 64)
 	log.Println("Starting listening...")
+
 	telegram.ListenToMessages(token, func(m *tgbotapi.Message) {
 		log.Println("Handling message")
+
 		if m.From == nil && m.SenderChat == nil {
 			log.Println("Invalid update received!")
 			return
@@ -67,13 +71,13 @@ func startSync(token string, from string, to string, stringToReplace string, rep
 		}
 
 		var sender int64
-
 		if m.From != nil {
 			sender = m.From.ID
 		}
 		if m.SenderChat != nil {
 			sender = m.SenderChat.ID
 		}
+
 		if len(stringToReplace) == 0 {
 			telegram.CopyMessage(token, origin, destination, *m)
 			log.Println("Message forwarded")
@@ -91,10 +95,12 @@ func parseMessage(message *tgbotapi.Message, stringToReplace string, replacement
 		message.Caption = strings.Replace(message.Caption, stringToReplace, replacement, -1)
 		return message
 	}
+
 	if len(message.Text) > 0 {
 		message.Text = strings.Replace(message.Text, stringToReplace, replacement, -1)
 		return message
 	}
+
 	return message
 }
 
@@ -104,11 +110,13 @@ func promptOriginDestination(chatList []string) (string, string) {
 		Label:    "Select an origin",
 		Items:    chatList,
 	})
+
 	destination := *prompt.Select(prompt.SelectPromptContent{
 		ErrorMsg: "No origin selected!",
 		Label:    "Select a destination",
 		Items:    chatList,
 	})
+
 	r := regexp.MustCompile("\\[([^\\][]*)]")
 	parsedOrigin := r.FindString(origin)
 	parsedOrigin = strings.Trim(parsedOrigin, "[")
@@ -116,6 +124,7 @@ func promptOriginDestination(chatList []string) (string, string) {
 	parsedDestination := r.FindString(destination)
 	parsedDestination = strings.Trim(parsedDestination, "[")
 	parsedDestination = strings.Trim(parsedDestination, "]")
+
 	return parsedOrigin, parsedDestination
 }
 
@@ -149,7 +158,7 @@ func promptSubstitution() (string, string) {
 	return textToReplace, replacement
 }
 
-func askForConfirm(origin string, destination string) {
+func askForSyncStartConfirmation(origin string, destination string) {
 	confirm := *prompt.Select(prompt.SelectPromptContent{
 		ErrorMsg: "Invalid response!",
 		Label:    fmt.Sprintf("Do you want to enable sync from %s to %s? (yes/no)", origin, destination),

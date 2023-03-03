@@ -2,8 +2,8 @@ package prompt
 
 import (
 	"errors"
-	"fmt"
 	"github.com/manifoldco/promptui"
+	"log"
 	"os"
 	"regexp"
 )
@@ -53,10 +53,10 @@ func Input(pc InputPromptContent) string {
 
 	result, err := prompt.Run()
 	if err != nil {
-		fmt.Printf("Prompt failed %v\n", err)
+		log.Printf("Prompt failed %v\n", err)
 		os.Exit(1)
 	}
-	
+
 	return result
 }
 
@@ -69,7 +69,7 @@ func Select(pc SelectPromptContent) *string {
 	_, result, err := prompt.Run()
 
 	if err != nil {
-		fmt.Printf("Prompt failed %v\n", err)
+		log.Printf("Prompt failed %v\n", err)
 		return nil
 	}
 
