@@ -4,6 +4,7 @@ Copyright © 2023 brascioladisoia
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/spf13/cobra"
@@ -41,6 +42,7 @@ func sync(cmd *cobra.Command, args []string) {
 	chatList := http.GetChats(token)
 	parsedOrigin, parsedDestination := promptOriginDestination(chatList)
 	stringToReplace, replacement := promptSubstitution()
+	charsToStrip := promptCharsLengthToStrip()
 	askForSyncStartConfirmation(parsedOrigin, parsedDestination)
 
 	log.Println(fmt.Sprintf("Using %s as origin and %s as destination", parsedOrigin, parsedDestination))
@@ -48,10 +50,10 @@ func sync(cmd *cobra.Command, args []string) {
 		log.Println(fmt.Sprintf("Replacing \"%s\" with \"%s\"", stringToReplace, replacement))
 	}
 
-	startSync(token, parsedOrigin, parsedDestination, stringToReplace, replacement)
+	startSync(token, parsedOrigin, parsedDestination, stringToReplace, replacement, charsToStrip)
 }
 
-func startSync(token string, from string, to string, stringToReplace string, replacement string) {
+func startSync(token string, from string, to string, stringToReplace string, replacement string, charsToStrip int) {
 	origin, _ := strconv.ParseInt(from, 10, 64)
 	destination, _ := strconv.ParseInt(to, 10, 64)
 	log.Println("Starting listening...")
@@ -78,26 +80,32 @@ func startSync(token string, from string, to string, stringToReplace string, rep
 			sender = m.SenderChat.ID
 		}
 
-		if len(stringToReplace) == 0 {
+		if len(stringToReplace) == 0 && charsToStrip == 0 {
 			telegram.CopyMessage(token, origin, destination, *m)
 			log.Println("Message forwarded")
 			return
 		}
 
-		parsedMessage := parseMessage(m, stringToReplace, replacement)
+		parsedMessage := parseMessage(m, stringToReplace, replacement, charsToStrip)
 		telegram.SendMessage(token, sender, destination, *parsedMessage)
 		log.Println("Message forwarded")
 	}, 0)
 }
 
-func parseMessage(message *tgbotapi.Message, stringToReplace string, replacement string) *tgbotapi.Message {
+func parseMessage(message *tgbotapi.Message, stringToReplace string, replacement string, charsToStrip int) *tgbotapi.Message {
 	if len(message.Caption) > 0 {
 		message.Caption = strings.Replace(message.Caption, stringToReplace, replacement, -1)
+		if charsToStrip > 0 {
+			message.Caption = message.Caption[:len(message.Caption)-charsToStrip]
+		}
 		return message
 	}
 
 	if len(message.Text) > 0 {
 		message.Text = strings.Replace(message.Text, stringToReplace, replacement, -1)
+		if charsToStrip > 0 {
+			message.Text = message.Text[:len(message.Text)-charsToStrip]
+		}
 		return message
 	}
 
@@ -156,6 +164,34 @@ func promptSubstitution() (string, string) {
 	})
 
 	return textToReplace, replacement
+}
+func promptCharsLengthToStrip() int {
+	confirm := *prompt.Select(prompt.SelectPromptContent{
+		ErrorMsg: "Invalid input!",
+		Label:    fmt.Sprintf("Do you want to cut out some characters in message forwarding?"),
+		Items:    []string{"yes", "no"},
+	})
+
+	if confirm != "yes" {
+		return 0
+	}
+
+	charsToStripString := prompt.Input(prompt.InputPromptContent{
+		ErrorMsg: "Invalid input!",
+		Label:    "Insert number of chars to strip (from the end)",
+		ValidateFunc: func(s string) error {
+			val, _ := strconv.Atoi(s)
+			if !(val > 0) {
+				return errors.New("invalid number")
+			}
+			return nil
+		},
+		ValidateRegex: "",
+	})
+
+	charsToStrip, _ := strconv.Atoi(charsToStripString)
+
+	return charsToStrip
 }
 
 func askForSyncStartConfirmation(origin string, destination string) {
