@@ -21,4 +21,4 @@ core:
 core-logs:
 	docker-compose logs -f --tail 100
 run:
-	dist/tcl-linux-amd64 $(ARGS)
+	dist/tcl-darwin-arm64 $(ARGS)

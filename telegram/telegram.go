@@ -10,10 +10,6 @@ var globalClient tgbotapi.BotAPI
 type MessageReceivedCallbackFunc = func(message *tgbotapi.Message)
 
 func getClient(token string) *tgbotapi.BotAPI {
-	if &globalClient != nil {
-		return &globalClient
-	}
-
 	bot, err := tgbotapi.NewBotAPIWithAPIEndpoint(token, "http://localhost:8081/user%s/%s")
 	bot.Debug = false
 	if err != nil {
@@ -21,9 +17,7 @@ func getClient(token string) *tgbotapi.BotAPI {
 		log.Fatalln(err)
 		return nil
 	}
-
-	globalClient = *bot
-	return &globalClient
+	return bot
 }
 
 func ListenToMessages(token string, cb MessageReceivedCallbackFunc, updateRange int) {
