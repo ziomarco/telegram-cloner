@@ -43,6 +43,7 @@ func sync(cmd *cobra.Command, args []string) {
 	parsedOrigin, parsedDestination := promptOriginDestination(chatList)
 	stringToReplace, replacement := promptSubstitution()
 	charsToStrip := promptCharsLengthToStrip()
+	stripPhrases := promptStripPhrase([]string{})
 	askForSyncStartConfirmation(parsedOrigin, parsedDestination)
 
 	log.Println(fmt.Sprintf("Using %s as origin and %s as destination", parsedOrigin, parsedDestination))
@@ -50,10 +51,10 @@ func sync(cmd *cobra.Command, args []string) {
 		log.Println(fmt.Sprintf("Replacing \"%s\" with \"%s\"", stringToReplace, replacement))
 	}
 
-	startSync(token, parsedOrigin, parsedDestination, stringToReplace, replacement, charsToStrip)
+	startSync(token, parsedOrigin, parsedDestination, stringToReplace, replacement, charsToStrip, stripPhrases)
 }
 
-func startSync(token string, from string, to string, stringToReplace string, replacement string, charsToStrip int) {
+func startSync(token string, from string, to string, stringToReplace string, replacement string, charsToStrip int, stripPhrases []string) {
 	origin, _ := strconv.ParseInt(from, 10, 64)
 	destination, _ := strconv.ParseInt(to, 10, 64)
 	log.Println("Starting listening...")
@@ -80,25 +81,29 @@ func startSync(token string, from string, to string, stringToReplace string, rep
 			sender = m.SenderChat.ID
 		}
 
-		if len(stringToReplace) == 0 && charsToStrip == 0 {
+		if len(stringToReplace) == 0 && charsToStrip == 0 && len(stripPhrases) == 0 {
 			telegram.CopyMessage(token, origin, destination, *m)
 			log.Println("Message forwarded")
 			return
 		}
 
-		parsedMessage := parseMessage(m, stringToReplace, replacement, charsToStrip)
+		parsedMessage := parseMessage(m, stringToReplace, replacement, charsToStrip, stripPhrases)
 		telegram.SendMessage(token, sender, destination, *parsedMessage)
 		log.Println("Message forwarded")
 	}, 0)
 }
 
-func parseMessage(message *tgbotapi.Message, stringToReplace string, replacement string, charsToStrip int) *tgbotapi.Message {
+func parseMessage(message *tgbotapi.Message, stringToReplace string, replacement string, charsToStrip int, stripPhrases []string) *tgbotapi.Message {
 	if len(message.Caption) > 0 {
 		message.Caption = strings.Replace(message.Caption, stringToReplace, replacement, -1)
 		if charsToStrip > 0 {
 			message.Caption = message.Caption[:len(message.Caption)-charsToStrip]
 		}
-		return message
+		if len(stripPhrases) > 0 {
+			for _, phraseToStrip := range stripPhrases {
+				message.Caption = strings.Split(message.Caption, phraseToStrip)[0]
+			}
+		}
 	}
 
 	if len(message.Text) > 0 {
@@ -106,7 +111,11 @@ func parseMessage(message *tgbotapi.Message, stringToReplace string, replacement
 		if charsToStrip > 0 {
 			message.Text = message.Text[:len(message.Text)-charsToStrip]
 		}
-		return message
+		if len(stripPhrases) > 0 {
+			for _, phraseToStrip := range stripPhrases {
+				message.Text = strings.Split(message.Text, phraseToStrip)[0]
+			}
+		}
 	}
 
 	return message
@@ -192,6 +201,44 @@ func promptCharsLengthToStrip() int {
 	charsToStrip, _ := strconv.Atoi(charsToStripString)
 
 	return charsToStrip
+}
+
+func promptStripPhrase(a []string) []string {
+	confirm := *prompt.Select(prompt.SelectPromptContent{
+		ErrorMsg: "Invalid input!",
+		Label:    fmt.Sprintf("Do you want to strip out some phrases in message forwarding?"),
+		Items:    []string{"yes", "no"},
+	})
+
+	if confirm != "yes" {
+		return nil
+	}
+
+	stripPhrase := prompt.Input(prompt.InputPromptContent{
+		ErrorMsg: "Invalid input!",
+		Label:    "Insert phrase to strip from (first part will be taken)",
+		ValidateFunc: func(s string) error {
+			if len(s) == 0 {
+				return errors.New("invalid phrase to strip")
+			}
+			return nil
+		},
+		ValidateRegex: "",
+	})
+
+	a = append(a, stripPhrase)
+
+	confirmAnother := *prompt.Select(prompt.SelectPromptContent{
+		ErrorMsg: "Invalid input!",
+		Label:    fmt.Sprintf("Do you want to add another phrase to strip?"),
+		Items:    []string{"yes", "no"},
+	})
+
+	if confirmAnother == "yes" {
+		return promptStripPhrase(a)
+	}
+
+	return a
 }
 
 func askForSyncStartConfirmation(origin string, destination string) {
