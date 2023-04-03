@@ -3,6 +3,8 @@ package telegram
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
+	database "telegramcloner/db"
+	model "telegramcloner/db/entities"
 )
 
 var globalClient tgbotapi.BotAPI
@@ -58,7 +60,7 @@ func CopyMessage(token string, from int64, to int64, message tgbotapi.Message) {
 	}
 }
 
-func SendMessage(token string, from int64, to int64, message tgbotapi.Message) {
+func SendMessage(token string, from int64, to int64, message tgbotapi.Message, linkedMessageId int) {
 	client := getClient(token)
 
 	var msgContent string
@@ -82,5 +84,20 @@ func SendMessage(token string, from int64, to int64, message tgbotapi.Message) {
 	}
 
 	msg := tgbotapi.NewMessage(to, msgContent)
-	client.Send(msg)
+
+	if linkedMessageId != 0 {
+		msg.ReplyToMessageID = linkedMessageId
+	}
+
+	res, err := client.Send(msg)
+	if err != nil {
+		log.Printf("Error while forwarding message: %s", err)
+		return
+	}
+	database.RegisterNewForward(model.ForwardedMessage{
+		OriginalMessageId:  message.MessageID,
+		ForwardedMessageId: res.MessageID,
+		SourceChatId:       int(from),
+		DestinationChatId:  int(to),
+	})
 }
