@@ -92,15 +92,17 @@ func PromptCharsLengthToStrip() int {
 	return charsToStrip
 }
 
-func PromptStripPhrase(a []string) []string {
-	confirm := *Select(SelectPromptContent{
-		ErrorMsg: "Invalid input!",
-		Label:    fmt.Sprintf("Do you want to strip out some phrases in message forwarding?"),
-		Items:    []string{"yes", "no"},
-	})
+func PromptStripPhrase(a []string, isFunctionInvokedAsRecursive bool) []string {
+	if !isFunctionInvokedAsRecursive {
+		confirm := *Select(SelectPromptContent{
+			ErrorMsg: "Invalid input!",
+			Label:    fmt.Sprintf("Do you want to strip out some phrases in message forwarding?"),
+			Items:    []string{"yes", "no"},
+		})
 
-	if confirm != "yes" {
-		return nil
+		if confirm != "yes" {
+			return a
+		}
 	}
 
 	stripPhrase := Input(InputPromptContent{
@@ -124,7 +126,7 @@ func PromptStripPhrase(a []string) []string {
 	})
 
 	if confirmAnother == "yes" {
-		return PromptStripPhrase(a)
+		return PromptStripPhrase(a, true)
 	}
 
 	return a

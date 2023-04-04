@@ -41,7 +41,7 @@ func sync(cmd *cobra.Command, args []string) {
 	parsedOrigin, parsedDestination := prompt.PromptOriginDestination(chatList)
 	stringToReplace, replacement := prompt.PromptSubstitution()
 	charsToStrip := prompt.PromptCharsLengthToStrip()
-	stripPhrases := prompt.PromptStripPhrase([]string{})
+	stripPhrases := prompt.PromptStripPhrase([]string{}, false)
 	prompt.AskForSyncStartConfirmation(parsedOrigin, parsedDestination)
 
 	log.Println(fmt.Sprintf("Using %s as origin and %s as destination", parsedOrigin, parsedDestination))
@@ -84,7 +84,8 @@ func handleMessage(token string, m *tgbotapi.Message, origin int64, destination 
 		sender = m.SenderChat.ID
 	}
 
-	if len(stringToReplace) == 0 && charsToStrip == 0 && len(stripPhrases) == 0 {
+	// Message is not modified in no way, and it doesn't contain any linked message (replies)
+	if len(stringToReplace) == 0 && charsToStrip == 0 && len(stripPhrases) == 0 && m.ReplyToMessage == nil {
 		telegram.CopyMessage(token, origin, destination, *m)
 		log.Println("Message forwarded")
 		return
