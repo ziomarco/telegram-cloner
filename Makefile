@@ -4,9 +4,8 @@ build:
 	make clean
 	@echo "Building..."
 	go build
-	fyne-cross windows -arch=* -output dist/ main.go
-	#CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -o dist/tcl-amd64.exe main.go
-	#CGO_ENABLED=1 GOOS=windows GOARCH=386 go build -o dist/tcl-386.exe main.go
+	CC=i686-w64-mingw32-gc CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -o dist/tcl-amd64.exe main.go
+	CC=i686-w64-mingw32-gc CGO_ENABLED=1 GOOS=windows GOARCH=386 go build -o dist/tcl-386.exe main.go
 	GOOS=darwin GOARCH=amd64 go build -o dist/tcl-darwin-amd64 main.go
 	GOOS=darwin GOARCH=arm64 go build -o dist/tcl-darwin-arm64 main.go
 	GOOS=linux GOARCH=386 go build -o dist/tcl-linux-386 main.go
