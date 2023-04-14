@@ -12,6 +12,7 @@ var dbGlobalInstance gorm.DB
 const SqliteDbFilename = "telegramcloner.db"
 
 func init() {
+	log.Println("Init DB started")
 	db, err := gorm.Open(sqlite.Open(SqliteDbFilename), &gorm.Config{})
 	if err != nil {
 		log.Panicf("Unable to connect to database: %s", err)
@@ -23,6 +24,7 @@ func init() {
 		log.Panicf("Unable to migrate database: %s", err)
 	}
 	dbGlobalInstance = *db
+	log.Println("Init DB completed")
 }
 
 func RegisterNewForward(message database.ForwardedMessage) bool {
@@ -48,4 +50,34 @@ func FindMessage(originalMessageId int) *database.ForwardedMessage {
 	}
 
 	return message
+}
+
+func VerifyDatabase() {
+	mock := database.ForwardedMessage{
+		OriginalMessageId:  1,
+		ForwardedMessageId: 2,
+		SourceChatId:       3,
+		DestinationChatId:  4,
+	}
+
+	res := RegisterNewForward(mock)
+
+	if !res {
+		log.Panicln("[InitDB] DB save failed")
+	}
+
+	found := FindMessage(mock.OriginalMessageId)
+
+	if found.ForwardedMessageId != mock.ForwardedMessageId {
+		log.Panicln("[InitDB] ForwardedMessageId mismatch")
+	}
+	if found.DestinationChatId != mock.DestinationChatId {
+		log.Panicln("[InitDB] DestinationChatId mismatch")
+	}
+	if found.OriginalMessageId != mock.OriginalMessageId {
+		log.Panicln("[InitDB] OriginalMessageId mismatch")
+	}
+	if found.SourceChatId != mock.SourceChatId {
+		log.Panicln("[InitDB] SourceChatId mismatch")
+	}
 }

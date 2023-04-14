@@ -36,7 +36,7 @@ func sync(cmd *cobra.Command, args []string) {
 	if len(token) < 1 {
 		log.Fatal("Please configure the CLI first!")
 	}
-
+	database.VerifyDatabase()
 	chatList := http.GetChats(token)
 	parsedOrigin, parsedDestination := prompt.PromptOriginDestination(chatList)
 	stringToReplace, replacement := prompt.PromptSubstitution()
