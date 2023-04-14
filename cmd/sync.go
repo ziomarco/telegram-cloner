@@ -95,6 +95,9 @@ func handleMessage(token string, m *tgbotapi.Message, origin int64, destination 
 	var linkedMessageId int
 	if m.ReplyToMessage != nil {
 		linkedMessage := *database.FindMessage(m.ReplyToMessage.MessageID)
+		if linkedMessage.ID < 0 {
+			log.Println("Invalid message found in database")
+		}
 		linkedMessageId = linkedMessage.ForwardedMessageId
 	}
 	telegram.SendMessage(token, sender, destination, *parsedMessage, linkedMessageId)
