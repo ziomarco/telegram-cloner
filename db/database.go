@@ -81,3 +81,19 @@ func VerifyDatabase() {
 		log.Panicln("[InitDB] SourceChatId mismatch")
 	}
 }
+
+func RegisterHandledMessage(messageId int, marshaledMessage string) bool {
+	now := time.Now()
+	var message = &database.HandledMessage{
+		OriginalMessageId: messageId,
+		HandledAt:         now.Unix(),
+		MarshaledMessage:  marshaledMessage,
+	}
+	result := dbGlobalInstance.Create(&message)
+	if result.Error != nil {
+		log.Printf("An error occurred while trying to track handled message %d in database.", messageId)
+		log.Println(result.Error)
+		return false
+	}
+	return result.RowsAffected > 0
+}

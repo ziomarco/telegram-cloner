@@ -4,6 +4,7 @@ Copyright © 2023 brascioladisoia
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/spf13/cobra"
@@ -29,6 +30,7 @@ sent in destination.`,
 
 func init() {
 	rootCmd.AddCommand(syncCmd)
+	syncCmd.Flags().Bool("debug", false, "Activate debug mode")
 }
 
 func sync(cmd *cobra.Command, args []string) {
@@ -49,20 +51,22 @@ func sync(cmd *cobra.Command, args []string) {
 		log.Println(fmt.Sprintf("Replacing \"%s\" with \"%s\"", stringToReplace, replacement))
 	}
 
-	startSync(token, parsedOrigin, parsedDestination, stringToReplace, replacement, charsToStrip, stripPhrases)
+	var isDebugModeActive = cmd.Flags().GetBool("debug")
+
+	startSync(token, parsedOrigin, parsedDestination, stringToReplace, replacement, charsToStrip, stripPhrases, isDebugModeActive)
 }
 
-func startSync(token string, from string, to string, stringToReplace string, replacement string, charsToStrip int, stripPhrases []string) {
+func startSync(token string, from string, to string, stringToReplace string, replacement string, charsToStrip int, stripPhrases []string, isDebugModeActive bool) {
 	origin, _ := strconv.ParseInt(from, 10, 64)
 	destination, _ := strconv.ParseInt(to, 10, 64)
 	log.Println("Starting listening...")
 
 	telegram.ListenToMessages(token, func(m *tgbotapi.Message) {
-		handleMessage(token, m, origin, destination, stringToReplace, replacement, charsToStrip, stripPhrases)
+		handleMessage(token, m, origin, destination, stringToReplace, replacement, charsToStrip, stripPhrases, isDebugModeActive)
 	}, 0)
 }
 
-func handleMessage(token string, m *tgbotapi.Message, origin int64, destination int64, stringToReplace string, replacement string, charsToStrip int, stripPhrases []string) {
+func handleMessage(token string, m *tgbotapi.Message, origin int64, destination int64, stringToReplace string, replacement string, charsToStrip int, stripPhrases []string, isDebugModeActive bool) {
 	log.Println("Handling message")
 
 	if m.From == nil && m.SenderChat == nil {
@@ -82,6 +86,15 @@ func handleMessage(token string, m *tgbotapi.Message, origin int64, destination 
 	}
 	if m.SenderChat != nil {
 		sender = m.SenderChat.ID
+	}
+
+	if isDebugModeActive {
+		log.Printf("Debug mode active: saving a copy of message %d in database...", m.MessageID)
+		debugMessageContent, _ := json.Marshal(m)
+		out := database.RegisterHandledMessage(m.MessageID, debugMessageContent)
+		if !out {
+			log.Printf("Couldn't save a copy of original message %d in database", m.MessageID)
+		}
 	}
 
 	// Message is not modified in no way, and it doesn't contain any linked message (replies)
