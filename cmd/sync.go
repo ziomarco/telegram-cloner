@@ -51,7 +51,7 @@ func sync(cmd *cobra.Command, args []string) {
 		log.Println(fmt.Sprintf("Replacing \"%s\" with \"%s\"", stringToReplace, replacement))
 	}
 
-	var isDebugModeActive = cmd.Flags().GetBool("debug")
+	var isDebugModeActive, _ = cmd.Flags().GetBool("debug")
 
 	startSync(token, parsedOrigin, parsedDestination, stringToReplace, replacement, charsToStrip, stripPhrases, isDebugModeActive)
 }
@@ -91,7 +91,7 @@ func handleMessage(token string, m *tgbotapi.Message, origin int64, destination 
 	if isDebugModeActive {
 		log.Printf("Debug mode active: saving a copy of message %d in database...", m.MessageID)
 		debugMessageContent, _ := json.Marshal(m)
-		out := database.RegisterHandledMessage(m.MessageID, debugMessageContent)
+		out := database.RegisterHandledMessage(m.MessageID, string(debugMessageContent))
 		if !out {
 			log.Printf("Couldn't save a copy of original message %d in database", m.MessageID)
 		}
