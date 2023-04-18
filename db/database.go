@@ -4,8 +4,8 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"log"
-	"time"
 	database "telegramcloner/db/entities"
+	"time"
 )
 
 var dbGlobalInstance gorm.DB
@@ -21,6 +21,7 @@ func init() {
 
 	// Migrate the schema
 	err = db.AutoMigrate(&database.ForwardedMessage{})
+	err = db.AutoMigrate(&database.HandledMessage{})
 	if err != nil {
 		log.Panicf("Unable to migrate database: %s", err)
 	}
