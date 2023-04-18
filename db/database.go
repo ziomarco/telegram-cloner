@@ -36,15 +36,14 @@ func RegisterNewForward(message database.ForwardedMessage) bool {
 		log.Println(result.Error)
 		return false
 	}
+	log.Println("Message forwarding tracked successfully")
 	return result.RowsAffected > 0
 }
 
 func FindMessage(originalMessageId int) *database.ForwardedMessage {
-	var message = &database.ForwardedMessage{
-		OriginalMessageId: originalMessageId,
-	}
+	var message = &database.ForwardedMessage{}
 
-	result := dbGlobalInstance.First(&message)
+	result := dbGlobalInstance.Find(&message, "original_message_id = ?", originalMessageId)
 
 	if result.Error != nil {
 		log.Println(result.Error)
@@ -55,6 +54,7 @@ func FindMessage(originalMessageId int) *database.ForwardedMessage {
 }
 
 func VerifyDatabase() {
+	log.Println("Verifying database working correctly...")
 	mock := database.ForwardedMessage{
 		OriginalMessageId:  1,
 		ForwardedMessageId: 2,
