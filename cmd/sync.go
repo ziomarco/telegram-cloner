@@ -61,13 +61,18 @@ func startSync(token string, from string, to string, stringToReplace string, rep
 	destination, _ := strconv.ParseInt(to, 10, 64)
 	log.Println("Starting listening...")
 
-	telegram.ListenToMessages(token, func(m *tgbotapi.Message) {
-		handleMessage(token, m, origin, destination, stringToReplace, replacement, charsToStrip, stripPhrases, isDebugModeActive)
+	telegram.ListenToMessages(token, func(m *tgbotapi.Message, isUpdate bool) {
+		handleMessage(token, m, isUpdate, origin, destination, stringToReplace, replacement, charsToStrip, stripPhrases, isDebugModeActive)
 	}, 0)
 }
 
-func handleMessage(token string, m *tgbotapi.Message, origin int64, destination int64, stringToReplace string, replacement string, charsToStrip int, stripPhrases []string, isDebugModeActive bool) {
+func handleMessage(token string, m *tgbotapi.Message, isUpdate bool, origin int64, destination int64, stringToReplace string, replacement string, charsToStrip int, stripPhrases []string, isDebugModeActive bool) {
 	log.Println("Handling message")
+
+	if isDebugModeActive {
+		data, _ := json.Marshal(m)
+		fmt.Println(string(data))
+	}
 
 	if m.From == nil && m.SenderChat == nil {
 		log.Println("Invalid update received!")
@@ -98,9 +103,14 @@ func handleMessage(token string, m *tgbotapi.Message, origin int64, destination 
 	}
 
 	// Message is not modified in no way, and it doesn't contain any linked message (replies)
-	if len(stringToReplace) == 0 && charsToStrip == 0 && len(stripPhrases) == 0 && m.ReplyToMessage == nil {
-		telegram.CopyMessage(token, origin, destination, *m)
-		log.Println("Message forwarded")
+	//if len(stringToReplace) == 0 && charsToStrip == 0 && len(stripPhrases) == 0 && m.ReplyToMessage == nil {
+	//	telegram.CopyMessage(token, origin, destination, *m)
+	//	log.Println("Message forwarded")
+	//	return
+	//}
+
+	if isUpdate {
+		fmt.Println("Handling an update... TODO Implement!")
 		return
 	}
 

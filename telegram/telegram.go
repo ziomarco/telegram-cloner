@@ -9,7 +9,7 @@ import (
 
 var globalClient tgbotapi.BotAPI
 
-type MessageReceivedCallbackFunc = func(message *tgbotapi.Message)
+type MessageReceivedCallbackFunc = func(message *tgbotapi.Message, isUpdate bool)
 
 func getClient(token string) *tgbotapi.BotAPI {
 	bot, err := tgbotapi.NewBotAPIWithAPIEndpoint(token, "http://localhost:8081/user%s/%s")
@@ -34,11 +34,17 @@ func ListenToMessages(token string, cb MessageReceivedCallbackFunc, updateRange 
 		if &update == nil {
 			continue
 		}
+		if update.EditedChannelPost != nil {
+			cb(update.EditedChannelPost, true)
+		}
+		if update.EditedMessage != nil {
+			cb(update.EditedMessage, true)
+		}
 		if update.ChannelPost != nil {
-			cb(update.ChannelPost)
+			cb(update.ChannelPost, false)
 		}
 		if update.Message != nil {
-			cb(update.Message)
+			cb(update.Message, false)
 		}
 	}
 }
