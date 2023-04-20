@@ -66,6 +66,16 @@ func CopyMessage(token string, from int64, to int64, message tgbotapi.Message) {
 	}
 }
 
+func EditMessage(token string, chatId int64, messageId int, message string) {
+	client := getClient(token)
+	msg := tgbotapi.NewEditMessageText(chatId, messageId, message)
+	_, err := client.Send(msg)
+
+	if err != nil {
+		log.Printf("Error while editing message %d", messageId)
+	}
+}
+
 func SendMessage(token string, from int64, to int64, message tgbotapi.Message, linkedMessageId int) {
 	client := getClient(token)
 

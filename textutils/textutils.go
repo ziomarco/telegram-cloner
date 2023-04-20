@@ -17,6 +17,18 @@ func ParseMessage(message *tgbotapi.Message, stringToReplace string, replacement
 	return message
 }
 
+func ExtractTextFromMessage(message *tgbotapi.Message) string {
+	if len(message.Caption) > 0 {
+		return message.Caption
+	}
+
+	if len(message.Text) > 0 {
+		return message.Text
+	}
+
+	return ""
+}
+
 func parseText(text string, stringToReplace string, replacement string, charsToStrip int, stripPhrases []string) string {
 	text = strings.Replace(text, stringToReplace, replacement, -1)
 

@@ -108,18 +108,28 @@ func handleMessage(token string, m *tgbotapi.Message, isUpdate bool, origin int6
 	//	log.Println("Message forwarded")
 	//	return
 	//}
+	parsedMessage := textutils.ParseMessage(m, stringToReplace, replacement, charsToStrip, stripPhrases)
 
 	if isUpdate {
-		fmt.Println("Handling an update... TODO Implement!")
+		fmt.Println("Handling an update...")
+		dbMessage := database.FindMessage(m.MessageID)
+		if dbMessage.ID == 0 {
+			log.Printf("Can't edit message %d because no match was found in DB", m.MessageID)
+			return
+		}
+		forwardedChatId := dbMessage.DestinationChatId
+		forwardedMessageId := dbMessage.ForwardedMessageId
+		telegram.EditMessage(token, int64(forwardedChatId), forwardedMessageId, textutils.ExtractTextFromMessage(parsedMessage))
 		return
 	}
 
-	parsedMessage := textutils.ParseMessage(m, stringToReplace, replacement, charsToStrip, stripPhrases)
 	var linkedMessageId int
 	if m.ReplyToMessage != nil {
 		linkedMessage := *database.FindMessage(m.ReplyToMessage.MessageID)
-		if linkedMessage.ID < 0 {
+		if linkedMessage.ID == 0 {
 			log.Println("Invalid message found in database")
+			log.Printf("Skipping forwarding for message %d \n", m.MessageID)
+			return
 		}
 		linkedMessageId = linkedMessage.ForwardedMessageId
 	}
