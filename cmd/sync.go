@@ -128,8 +128,7 @@ func handleMessage(token string, m *tgbotapi.Message, isUpdate bool, origin int6
 		linkedMessage := *database.FindMessage(m.ReplyToMessage.MessageID)
 		if linkedMessage.ID == 0 {
 			log.Println("Invalid message found in database")
-			log.Printf("Skipping forwarding for message %d \n", m.MessageID)
-			return
+			log.Printf("forwarding anyway message %d \n", m.MessageID)
 		}
 		linkedMessageId = linkedMessage.ForwardedMessageId
 	}
