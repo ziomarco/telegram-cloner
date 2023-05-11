@@ -3,35 +3,45 @@ package prompt
 import (
 	"errors"
 	"fmt"
+	"golang.org/x/exp/slices"
 	"log"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
+	"telegramcloner/http"
 )
 
-func PromptOriginDestination(chatList []string) (string, string) {
-	origin := *Select(SelectPromptContent{
+func PromptOriginDestination(chatList []http.ChatListItem) (http.ChatListItem, http.ChatListItem) {
+	var parsedChatList []string
+	for _, chat := range chatList {
+		parsedChatList = append(parsedChatList, fmt.Sprintf("%s△%s△%s", chat.Name, chat.Type, strconv.Itoa(chat.Id)))
+	}
+
+	strOrigin := *Select(SelectPromptContent{
 		ErrorMsg: "No origin selected!",
 		Label:    "Select an origin",
-		Items:    chatList,
+		Items:    parsedChatList,
 	})
 
-	destination := *Select(SelectPromptContent{
+	strDestination := *Select(SelectPromptContent{
 		ErrorMsg: "No origin selected!",
 		Label:    "Select a destination",
-		Items:    chatList,
+		Items:    parsedChatList,
 	})
 
-	r := regexp.MustCompile("\\[([^\\][]*)]")
-	parsedOrigin := r.FindString(origin)
-	parsedOrigin = strings.Trim(parsedOrigin, "[")
-	parsedOrigin = strings.Trim(parsedOrigin, "]")
-	parsedDestination := r.FindString(destination)
-	parsedDestination = strings.Trim(parsedDestination, "[")
-	parsedDestination = strings.Trim(parsedDestination, "]")
+	originIdx := slices.IndexFunc(chatList, func(el http.ChatListItem) bool {
+		split := strings.Split(strOrigin, "△")
+		parsedId, _ := strconv.Atoi(split[2])
+		return split[0] == el.Name && split[1] == el.Type && parsedId == el.Id
+	})
 
-	return parsedOrigin, parsedDestination
+	destinationIdx := slices.IndexFunc(chatList, func(el http.ChatListItem) bool {
+		split := strings.Split(strDestination, "△")
+		parsedId, _ := strconv.Atoi(split[2])
+		return split[0] == el.Name && split[1] == el.Type && parsedId == el.Id
+	})
+
+	return chatList[originIdx], chatList[destinationIdx]
 }
 
 func PromptSubstitution() (string, string) {

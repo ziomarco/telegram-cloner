@@ -4,14 +4,15 @@ Copyright © 2023 brascioladisoia
 package cmd
 
 import (
-	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"log"
-	"os"
+	"telegramcloner/config"
 	"telegramcloner/http"
 	"telegramcloner/prompt"
 )
+
+const KTelegramUserToken = "telegram_user_token"
 
 // configureCmd represents the configure command
 var configureCmd = &cobra.Command{
@@ -46,17 +47,10 @@ func configure(cmd *cobra.Command, args []string) {
 	if confirmLoginResponse == nil || confirmLoginResponse.Result.AuthorizationState != "ready" {
 		log.Fatal("Impossible to confirm login")
 	}
-	viper.Set("telegram_user_token", loginResponse.Result.Token)
-	home, configFileNotFoundError := os.UserHomeDir()
-	_, configFileNotFoundError = os.Stat(home + "/.telegramcloner.yaml")
-	if configFileNotFoundError == nil {
-		log.Println("Updating config file...")
-		os.RemoveAll(home + "/.telegramcloner.yaml")
-	}
-	// TODO: Probably should fix this
-	writeConfigFileError := os.WriteFile(home+"/.telegramcloner.yaml", []byte(fmt.Sprintf("telegram_user_token: %s", loginResponse.Result.Token)), 0644)
-	if writeConfigFileError != nil {
-		log.Fatal("Can't save config!")
+	viper.Set(KTelegramUserToken, loginResponse.Result.Token)
+	err := config.WriteConfig(viper.AllSettings())
+	if err != nil {
+		log.Fatalln("Impossible to write configuration!")
 	}
 	log.Println("Login succeeded!")
 }

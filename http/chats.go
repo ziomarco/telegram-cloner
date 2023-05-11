@@ -5,11 +5,16 @@ import (
 	"fmt"
 	"github.com/imroc/req/v3"
 	"log"
-	"strconv"
 )
 
-func GetChats(userToken string) []string {
-	var chats []string
+type ChatListItem struct {
+	Name string
+	Type string
+	Id   int
+}
+
+func GetChats(userToken string) []ChatListItem {
+	var chats []ChatListItem
 	client := req.C()
 	url := fmt.Sprintf("http://localhost:8081/user%s/getChats", userToken)
 	res, err := client.R().Post(url)
@@ -29,7 +34,11 @@ func GetChats(userToken string) []string {
 		if len(name) < 1 {
 			name = chat.Title
 		}
-		chats = append(chats, fmt.Sprintf("%s (%s) [%s]", name, chat.Type, strconv.Itoa(chat.Id)))
+		chats = append(chats, ChatListItem{
+			Name: name,
+			Type: chat.Type,
+			Id:   chat.Id,
+		})
 	}
 	return chats
 }
