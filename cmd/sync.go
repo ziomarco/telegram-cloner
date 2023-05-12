@@ -87,6 +87,7 @@ func detectIdChanges(isDebugModeActive bool) {
 			}
 			viper.Set(KOrigin, updatedChats[originIdx])
 			viper.Set(KParsedOrigin, updatedChats[originIdx].Id)
+			config.WriteConfig(viper.AllSettings())
 		} else {
 			if isDebugModeActive {
 				logger.Println("[detectIdChanges] Origin ID unchanged, skipping...")
@@ -99,6 +100,7 @@ func detectIdChanges(isDebugModeActive bool) {
 			}
 			viper.Set(KDestination, updatedChats[destinationIdx])
 			viper.Set(KParsedDestination, updatedChats[destinationIdx].Id)
+			config.WriteConfig(viper.AllSettings())
 		} else {
 			if isDebugModeActive {
 				logger.Println("[detectIdChanges] Destination ID unchanged, skipping...")
